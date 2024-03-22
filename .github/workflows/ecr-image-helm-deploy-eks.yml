@@ -13,6 +13,11 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v2.0
+      with:
+        version: 'v1.29.0'
+      id: install
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -30,7 +35,12 @@ jobs:
       run: |
         docker build --file ./Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-    - name: Logout of Amazon ECR
-      if: always()
-      run: docker logout $ECR_REGISTRY
+    - name: Pull Helm Package from AWS ECR Repo
+      run: |
+        helm pull oci://628809433177.dkr.ecr.ap-south-1.amazonaws.com/zon-coffee-helm
+    - name: Update kube config
+      run: aws eks update-kubeconfig --name my-cluster --region ap-south-1
+    - name: Deploy helm package to EKS
+      run: |
+        helm install zon-coffee ./zon-coffee-helm-0.1.0.tgz
     
