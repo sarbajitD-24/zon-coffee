@@ -32,5 +32,5 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
     - name: Logout of Amazon ECR
       if: always()
-      run: docker logout
+      run: docker logout $ECR_REGISTRY
     
