@@ -23,7 +23,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-south-1
+        aws-region: ${{ secrets.AWS_REGION }}
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
@@ -36,10 +36,13 @@ jobs:
         docker build --file ./Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
     - name: Pull Helm Package from AWS ECR Repo
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_HELM_REPOSITORY: zon-coffee-helm
       run: |
-        helm pull oci://628809433177.dkr.ecr.ap-south-1.amazonaws.com/zon-coffee-helm
+        helm pull oci://$ECR_REGISTRY/$ECR_HELM_REPOSITORY
     - name: Update kube config
-      run: aws eks update-kubeconfig --name my-cluster --region ap-south-1
+      run: aws eks update-kubeconfig --name my-cluster --region ${{ secrets.AWS_REGION }}
     - name: Deploy helm package to EKS
       run: |
         helm install zon-coffee ./zon-coffee-helm-0.1.0.tgz
